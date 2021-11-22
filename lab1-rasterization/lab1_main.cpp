@@ -38,7 +38,7 @@ void initGL()
 		0.5f,  -0.5f, 1.0f  // v2
 	};
 	// Create a handle for the position vertex buffer object
-	// See OpenGL Spec §2.9 Buffer Objects
+	// See OpenGL Spec ?.9 Buffer Objects
 	// - http://www.cse.chalmers.se/edu/course/TDA361/glspec30.20080923.pdf#page=54
 	GLuint positionBuffer;
 	glGenBuffers(1, &positionBuffer);
@@ -70,7 +70,7 @@ void initGL()
 	//////////////////////////////////////////////////////////////////////////////
 	// Create a vertex array object and connect the vertex buffer objects to it
 	//
-	// See OpenGL Spec §2.10
+	// See OpenGL Spec ?.10
 	// - http://www.cse.chalmers.se/edu/course/TDA361/glspec30.20080923.pdf#page=64
 	//////////////////////////////////////////////////////////////////////////////
 	glGenVertexArrays(1, &vertexArrayObject);
@@ -99,7 +99,7 @@ void initGL()
 	// Create shaders
 	///////////////////////////////////////////////////////////////////////////
 
-	// See OpenGL spec §2.20 http://www.cse.chalmers.se/edu/course/TDA361/glspec30.20080923.pdf#page=104&zoom=75
+	// See OpenGL spec ?.20 http://www.cse.chalmers.se/edu/course/TDA361/glspec30.20080923.pdf#page=104&zoom=75
 	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
 	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 
@@ -177,7 +177,8 @@ void display(void)
 	glViewport(0, 0, w, h); // Set viewport
 
 	glClearColor(g_clearColor[0], g_clearColor[1], g_clearColor[2], 1.0); // Set clear color
-	glClear(GL_BUFFER); // Clears the color buffer and the z-buffer
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//glClear(GL_BUFFER); // Clears the color buffer and the z-buffer
 	                    // Instead of glClear(GL_BUFFER) the call should be glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
 	// We disable backface culling for this tutorial, otherwise care must be taken with the winding order
@@ -228,7 +229,7 @@ int main(int argc, char* argv[])
 		// TASK 1: Uncomment the call to gui below to show the GUI
 		///////////////////////////////////////////////////////////////////////////
 		// Then render overlay GUI.
-		// gui();
+		gui();
 
 		// Swap front and back buffer. This frame will now been displayed.
 		SDL_GL_SwapWindow(g_window);
