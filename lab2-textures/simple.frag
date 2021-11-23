@@ -7,9 +7,13 @@ precision highp float;
 // >>> @task 3.4
 
 layout(location = 0) out vec4 fragmentColor;
+layout(binding = 0) uniform sampler2D colourtexture;
+
+in vec3 outColour;
+in vec2 outTexture;
 
 void main()
 {
 	// >>> @task 3.5
-	fragmentColor = vec4(1.0, 0.5, 0.25, 1.0);
+	fragmentColor = texture2D(colourtexture, outTexture.xy);
 }
