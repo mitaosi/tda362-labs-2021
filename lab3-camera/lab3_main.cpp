@@ -51,13 +51,14 @@ Model* cityModel = nullptr;
 Model* carModel = nullptr;
 Model* groundModel = nullptr;
 mat4 carModelMatrix(1.0f);
+mat4 carModelMatrix2(1.0f);
 
 vec3 worldUp = vec3(0.0f, 1.0f, 0.0f);
 
 // Camera parameters
 vec3 cameraPosition(15.0f, 15.0f, 15.0f);
 vec3 cameraDirection(-1.0f, -1.0f, -1.0f);
-mat4 T(1.0f), R(1.0f);
+mat4 T(1.0f), T2(1.0f), R(1.0f), R2(1.0f);
 
 void loadModels()
 {
@@ -111,7 +112,17 @@ void display()
 	                               0.816496551f, 1.00000000f, 0.000000000f, -0.707106769f, -0.408248276f,
 	                               1.00000000f, 0.000000000f, 0.000000000f, 0.000000000f, -30.0000000f,
 	                               1.00000000f);
-	mat4 viewMatrix = constantViewMatrix;
+	//mat4 viewMatrix = constantViewMatrix;
+
+	// use camera direction as -z axis and compute the x (cameraRight) and y (cameraUp) base vectors
+	vec3 cameraRight = normalize(cross(cameraDirection, worldUp));
+	vec3 cameraUp = normalize(cross(cameraRight, cameraDirection));
+
+	mat3 cameraBaseVectorsWorldSpace(cameraRight, cameraUp, -cameraDirection);
+
+	mat4 cameraRotation = mat4(transpose(cameraBaseVectorsWorldSpace));
+	mat4 viewMatrix = cameraRotation * translate(-cameraPosition);
+
 
 	// Setup the projection matrix
 	if(w != old_w || h != old_h)
@@ -133,10 +144,15 @@ void display()
 
 	// Ground
 	// Task 5: Uncomment this
-	//drawGround(modelViewProjectionMatrix);
+	drawGround(modelViewProjectionMatrix);
 
 	// car
 	modelViewProjectionMatrix = projectionMatrix * viewMatrix * carModelMatrix;
+	glUniformMatrix4fv(loc, 1, false, &modelViewProjectionMatrix[0].x);
+	render(carModel);
+
+	// car2
+	modelViewProjectionMatrix = projectionMatrix * viewMatrix * carModelMatrix2;
 	glUniformMatrix4fv(loc, 1, false, &modelViewProjectionMatrix[0].x);
 	render(carModel);
 
@@ -185,6 +201,8 @@ int main(int argc, char* argv[])
 	// render-loop
 	bool stopRendering = false;
 	auto startTime = std::chrono::system_clock::now();
+
+	vec3 tempPosition = vec3(0.f);
 
 	while(!stopRendering)
 	{
@@ -245,6 +263,10 @@ int main(int argc, char* argv[])
 				if(event.button.button == SDL_BUTTON_LEFT)
 				{
 					printf("Mouse motion while left button down (%i, %i)\n", event.motion.x, event.motion.y);
+					float rotationSpeed = 0.005f;
+					mat4 yaw = rotate(rotationSpeed * -delta_x, worldUp);
+					mat4 pitch = rotate(rotationSpeed * -delta_y, normalize(cross(cameraDirection, worldUp)));
+					cameraDirection = vec3(pitch * yaw * vec4(cameraDirection, 0.0f));
 				}
 				g_prevMouseCoords.x = event.motion.x;
 				g_prevMouseCoords.y = event.motion.y;
@@ -256,29 +278,63 @@ int main(int argc, char* argv[])
 
 		// implement camera controls based on key states
 		const float speed = 10.f;
+		const float rotateSpeed = 2.f;
 
-		if(state[SDL_SCANCODE_UP])
+		if (state[SDL_SCANCODE_UP])
 		{
-			T[3] += speed * deltaTime * vec4(0.0f, 0.0f, 1.0f, 0.0f);
+			T[3] += speed * deltaTime * (R * vec4(0.f, 0.f, 1.f, 0.f));
 			printf("Key Up is pressed down\n");
 		}
-		if(state[SDL_SCANCODE_DOWN])
+		if (state[SDL_SCANCODE_DOWN])
 		{
-			T[3] -= speed * deltaTime * vec4(0.0f, 0.0f, 1.0f, 0.0f);
+			T[3] -= speed * deltaTime * (R * vec4(0.f, 0.f, 1.f, 0.f));
 			printf("Key Down is pressed down\n");
 		}
 		if(state[SDL_SCANCODE_LEFT])
 		{
-			T[3] += speed * deltaTime * vec4(1.0f, 0.0f, 0.0f, 0.0f);
+			//T[3] += speed * deltaTime * vec4(1.0f, 0.0f, 0.0f, 0.0f);
+			R[0] -= rotateSpeed * deltaTime * R[2];
 			printf("Key Left is pressed down\n");
 		}
 		if(state[SDL_SCANCODE_RIGHT])
 		{
-			T[3] -= speed * deltaTime * vec4(1.0f, 0.0f, 0.0f, 0.0f);
+			//T[3] -= speed * deltaTime * vec4(1.0f, 0.0f, 0.0f, 0.0f);
+			R[0] += rotateSpeed * deltaTime * R[2];
 			printf("Key Right is pressed down\n");
 		}
+		//if (state[SDL_SCANCODE_W])
+		//{
+		//	cameraPosition += cameraDirection;
+		//	printf("Key W is pressed down\n");
+		//}
+		//if (state[SDL_SCANCODE_S])
+		//{
+		//	cameraPosition -= cameraDirection;
+		//	printf("Key S is pressed down\n");
+		//}
+		//if (state[SDL_SCANCODE_D])
+		//{
+		//	cameraPosition += cross(cameraDirection, worldUp);
+		//	printf("Key S is pressed down\n");
+		//}
+		//if (state[SDL_SCANCODE_A])
+		//{
+		//	cameraPosition -= cross(cameraDirection, worldUp);
+		//	printf("Key S is pressed down\n");
+		//}
 
-		carModelMatrix = T;
+		float angle = rotateSpeed * currentTime;
+
+		// Make R orthonormal again
+		R[0] = normalize(R[0]);
+		R[2] = vec4(cross(vec3(R[0]), vec3(R[1])), 0.0f);
+
+
+		R2 = rotate(-angle, vec3(0.f, 1.f, 0.f)) * currentTime;
+		T2[3] = vec4(tempPosition, 1.f);
+		//carModelMatrix = T;
+		carModelMatrix = T * R;
+		carModelMatrix2 = T2 * R2;
 	}
 
 	// Shut down everything. This includes the window and all other subsystems.
