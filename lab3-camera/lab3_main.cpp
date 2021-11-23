@@ -255,22 +255,30 @@ int main(int argc, char* argv[])
 		const uint8_t* state = SDL_GetKeyboardState(nullptr);
 
 		// implement camera controls based on key states
+		const float speed = 10.f;
+
 		if(state[SDL_SCANCODE_UP])
 		{
+			T[3] += speed * deltaTime * vec4(0.0f, 0.0f, 1.0f, 0.0f);
 			printf("Key Up is pressed down\n");
 		}
 		if(state[SDL_SCANCODE_DOWN])
 		{
+			T[3] -= speed * deltaTime * vec4(0.0f, 0.0f, 1.0f, 0.0f);
 			printf("Key Down is pressed down\n");
 		}
 		if(state[SDL_SCANCODE_LEFT])
 		{
+			T[3] += speed * deltaTime * vec4(1.0f, 0.0f, 0.0f, 0.0f);
 			printf("Key Left is pressed down\n");
 		}
 		if(state[SDL_SCANCODE_RIGHT])
 		{
+			T[3] -= speed * deltaTime * vec4(1.0f, 0.0f, 0.0f, 0.0f);
 			printf("Key Right is pressed down\n");
 		}
+
+		carModelMatrix = T;
 	}
 
 	// Shut down everything. This includes the window and all other subsystems.
