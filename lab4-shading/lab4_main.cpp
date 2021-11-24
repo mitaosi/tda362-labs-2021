@@ -36,6 +36,8 @@ GLuint backgroundProgram;
 ///////////////////////////////////////////////////////////////////////////////
 // Environment
 ///////////////////////////////////////////////////////////////////////////////
+GLuint positionBuffer;
+GLuint indexBuffer;
 GLuint fullScreenQuadVAO = 0;
 float environment_multiplier = 1.0f;
 GLuint environmentMap;
@@ -58,17 +60,17 @@ vec3 point_light_color = vec3(1.f, 1.f, 1.f);
 ///////////////////////////////////////////////////////////////////////////////
 
 //// MaterialTest ///////////////////////////////////////////////////////////////
-vec3 cameraPosition(0.0f, 30.0f, 30.0f);
-vec3 cameraDirection = normalize(vec3(0.0f) - cameraPosition);
-vec3 worldUp(0.0f, 1.0f, 0.0f);
-const std::string model_filename = "../scenes/materialtest.obj";
+// vec3 cameraPosition(0.0f, 30.0f, 30.0f);
+// vec3 cameraDirection = normalize(vec3(0.0f) - cameraPosition);
+// vec3 worldUp(0.0f, 1.0f, 0.0f);
+// const std::string model_filename = "../scenes/materialtest.obj";
 /////////////////////////////////////////////////////////////////////////////////
 
 // NewShip ////////////////////////////////////////////////////////////////////
-// vec3 cameraPosition(-30.0f, 10.0f, 30.0f);
-// vec3 cameraDirection = normalize(vec3(0.0f) - cameraPosition);
-// vec3 worldUp(0.0f, 1.0f, 0.0f);
-// const std::string model_filename = "../scenes/NewShip.obj";
+vec3 cameraPosition(-30.0f, 10.0f, 30.0f);
+vec3 cameraDirection = normalize(vec3(0.0f) - cameraPosition);
+vec3 worldUp(0.0f, 1.0f, 0.0f);
+const std::string model_filename = "../scenes/NewShip.obj";
 ///////////////////////////////////////////////////////////////////////////////
 
 
@@ -102,7 +104,38 @@ void initFullScreenQuad()
 	if(fullScreenQuadVAO == 0)
 	{
 		// >>> @task 4.1
-		// ...
+		// Create a handle for the vertex array object
+		glGenVertexArrays(1, &fullScreenQuadVAO);
+		// Set it as current, i.e., related calls will affect this object
+		glBindVertexArray(fullScreenQuadVAO);
+
+		// Positions for the Quad
+		const float positions[] = {
+			//	 X      Y  
+			-1.0f,	 -1.0f, // v0
+			 1.0f,	 -1.0f, // v1
+			 1.0f,	  1.0f,	// v2
+			-1.0f,	  1.0f  // v4
+		};
+
+		glGenBuffers(1, &positionBuffer);
+		// Set the newly created buffer as the current one
+		glBindBuffer(GL_ARRAY_BUFFER, positionBuffer);
+		// Send the vertex position data to the current buffer
+		glBufferData(GL_ARRAY_BUFFER, sizeof(positions), positions, GL_STATIC_DRAW);
+
+		// Attaches positionBuffer to vertexArrayObject, in the 0th attribute location
+		glVertexAttribPointer(0, 2, GL_FLOAT, false /*normalized*/, 0 /*stride*/, 0 /*offset*/);
+		// Enable the attribute
+		glEnableVertexAttribArray(0);
+
+		const int indices[] = {
+		0, 1, 2, // Triangle 1
+		0, 2, 3 
+		};
+		glGenBuffers(1, &indexBuffer);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 	}
 }
 
@@ -115,7 +148,10 @@ void drawFullScreenQuad()
 	// draw a quad at full screen
 	///////////////////////////////////////////////////////////////////////////
 	// >>> @task 4.2
-	// ...
+	glBindVertexArray(fullScreenQuadVAO);
+	glDisable(GL_DEPTH_TEST);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	glEnable(GL_DEPTH_TEST);
 }
 
 
@@ -257,6 +293,11 @@ void display(void)
 	// Task 4.3 - Render a fullscreen quad, to generate the background from the
 	//            environment map.
 	///////////////////////////////////////////////////////////////////////////
+	glUseProgram(backgroundProgram);
+	labhelper::setUniformSlow(backgroundProgram, "environment_multiplier", environment_multiplier);
+	labhelper::setUniformSlow(backgroundProgram, "inv_PV", inverse(projectionMatrix * viewMatrix));
+	labhelper::setUniformSlow(backgroundProgram, "camera_pos", cameraPosition);
+	drawFullScreenQuad();
 
 	///////////////////////////////////////////////////////////////////////////
 	// Render the .obj models
