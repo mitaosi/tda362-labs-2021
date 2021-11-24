@@ -96,8 +96,7 @@ vec3 calculateDirectIllumiunation(vec3 wo, vec3 n, vec3 base_color)
 	float F = R0 + (1.0 - R0)*pow((1.0 - wodotwh),5.0);
 
 	// Microfacet distribution
-	float s = material_shininess;
-	float D = ((s+2.0)/(2.0*PI))*pow(ndotwh,s);
+	float D = ((material_shininess+2.0)/(2.0*PI))*pow(ndotwh,material_shininess);
 	float A = 2.0*ndotwh*ndotwo/wodotwh;
 	float B = 2.0*ndotwh*ndotwi/wodotwh;
 	// Shadowing/Masking function
@@ -108,9 +107,14 @@ vec3 calculateDirectIllumiunation(vec3 wo, vec3 n, vec3 base_color)
 	///////////////////////////////////////////////////////////////////////////
 	// Task 3 - Make your shader respect the parameters of our material model.
 	///////////////////////////////////////////////////////////////////////////
+	vec3 dielectric_term = brdf * ndotwi * Li + (1-F) * diffuse_term;
+	vec3 metal_term = brdf * material_color * ndotwi * Li;
+	vec3 micro_facet_term = material_shininess * metal_term + (1 - material_metalness) * dielectric_term;
 
-	return brdf * dot(n, wi) * Li; 
+	float r = material_reflectivity;
 	//return direct_illum;
+	//return brdf * dot(n, wi) * Li; 
+	return r * micro_facet_term + (1 - r) * diffuse_term;
 }
 
 vec3 calculateIndirectIllumination(vec3 wo, vec3 n, vec3 base_color)
