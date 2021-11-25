@@ -331,22 +331,22 @@ void display()
 	glClearColor(0.2, 0.2, 0.8, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	labhelper::Material &screen = landingpadModel->m_materials[8];
-	screen.m_emission_texture.gl_id = securityFB.colorTextureTarget;
-	
-	//render the scene to this framebuffer, just as we do from the camera, but 
-	// skip the rendering of the security camera obj-model
 	drawScene(securityCamViewMatrix, securityCamProjectionMatrix);
 
 	///////////////////////////////////////////////////////////////////////////
 	// draw scene from camera
 	///////////////////////////////////////////////////////////////////////////
-	glBindFramebuffer(GL_FRAMEBUFFER, 0); // to be replaced with another framebuffer when doing post processing
+	FboInfo &securityFB2 = fboList[1];
+	//replaced with another framebuffer while post processing
+	glBindFramebuffer(GL_FRAMEBUFFER, securityFB2.framebufferId);
 	glViewport(0, 0, w, h);
 	glClearColor(0.2f, 0.2f, 0.8f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	drawScene(viewMatrix, projectionMatrix); // using both shaderProgram and backgroundProgram
+	
+	labhelper::Material& screen = landingpadModel->m_materials[8];
+	screen.m_emission_texture.gl_id = securityFB.colorTextureTarget;
 
 	// camera (obj-model)
 	drawCamera(securityCamViewMatrix, viewMatrix, projectionMatrix);
@@ -354,7 +354,20 @@ void display()
 	///////////////////////////////////////////////////////////////////////////
 	// Post processing pass(es)
 	///////////////////////////////////////////////////////////////////////////
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0, 0, w, h);
+	glClearColor(0.2f, 0.2f, 0.8f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	glUseProgram(postFxShader);
+
+	labhelper::setUniformSlow(postFxShader, "time", currentTime);
+	labhelper::setUniformSlow(postFxShader, "currentEffect", currentEffect);
+	labhelper::setUniformSlow(postFxShader, "filterSize", filterSizes[filterSize - 1]);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, securityFB2.colorTextureTarget);
+	labhelper::drawFullScreenQuad();
 
 	glUseProgram(0);
 

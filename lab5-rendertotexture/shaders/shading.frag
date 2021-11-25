@@ -120,10 +120,8 @@ vec3 calculateDirectIllumiunation(vec3 wo, vec3 n)
 	vec3 micro_facet_term = m * metal_term + (1 - m) * dielectric_term;
 
 	float r = material_reflectivity;
-	//return diffuse_term;
-	//return brdf * ndotwi * Li;
+	
 	return r * micro_facet_term + (1 - r) * diffuse_term;
-
 }
 
 vec3 calculateIndirectIllumination(vec3 wo, vec3 n)
